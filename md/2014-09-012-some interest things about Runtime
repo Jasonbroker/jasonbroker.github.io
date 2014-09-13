@@ -43,11 +43,11 @@ Objective-C具有相当多的动态特性，基本的，也是经常被提到和
 		id obj = someInstance;  
 		if ([obj isKindOfClass:someClass])  
 		{
-    someClass *classSpecifiedInstance = (someClass *)obj;
-    // Do Something to classSpecifiedInstance which now is an instance of someClass
-    //...
+            someClass *classSpecifiedInstance = (someClass *)obj;
+            // Do Something to classSpecifiedInstance which now is an instance of someClass
+            //...
 		}
--isMemberOfClass: 是 NSObject 的方法，用以确定某个 NSObject 对象是否是某个类的成员。与之相似的为 -isKindOfClass:，可以用以确定某个类是否是某个类或其子类。这两个方法为典型的introspection方法。在确定对象为某类成员后，可以安全地进行强制转换，继续之后的工作，因此这里的安全判断又是一种运行时的体现。
+`-isMemberOfClass: `是 `NSObject` 的方法，用以确定某个 NSObject 对象是否是某个类的成员。与之相似的为 -isKindOfClass:，可以用以确定某个类是否是某个类或其子类。这两个方法为典型的introspection方法。在确定对象为某类成员后，可以安全地进行强制转换，继续之后的工作，因此这里的安全判断又是一种运行时的体现。
 
 2、动态绑定
 
@@ -64,18 +64,18 @@ Objective-C具有相当多的动态特性，基本的，也是经常被提到和
 In Objective-C, messages aren’t bound to method implementations until runtime. The compiler converts a message expression,
 在oc中，消息直到运行的时候才会绑定到方法实现，
 
-[receiver message]
+        [receiver message]
 into a call on a messaging function, objc_msgSend. This function takes the receiver and the name of the method mentioned in the message—that is, the method selector—as its two principal parameters:
 
 objc_msgSend(receiver, selector)
 
 这个发送消息的oc代码[receiver message]在运行的时候才会转换成可调用的函数objc_msgSend。
-这个函数会取得接受者（也就是谁接受这个消息谁执行这个消息转换后的函数），还有这个方法的名字--也就是说这个selector有两个参数，objc_msgSend(receiver, selector)。
+这个函数会取得接受者（也就是谁接受这个消息谁执行这个消息转换后的函数），还有这个方法的名字--也就是说这个selector有两个参数， objc_msgSend(receiver, selector)。
 
 
 Any arguments passed in the message are also handed to objc_msgSend:
 
-objc_msgSend(receiver, selector, arg1, arg2, ...)
+        objc_msgSend(receiver, selector, arg1, arg2, ...)
 
 在消息中传递的所有参数都会传到这个函数里面。
 
