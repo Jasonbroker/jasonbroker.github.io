@@ -19,10 +19,10 @@ OC运行时是老生常谈了。因为啥呢？因为你玩OC就代表你玩的�
 讲到这里你是不是想到了啥？
 iOS开发中最常见的模式之一 --delegate实现。由于Cocoa程序大量地使用Protocol-Delegate的设计模式，因此绝大部分的delegate指针类型必须是id，以满足运行时delegate的动态替换。
 
-- (void)test{
-if ([self.myDelegate respondsToSelector:@selector(dosomething)])
-	[self.myDelegte doSomething];
-}
+    - (void)test{
+    if ([self.myDelegate respondsToSelector:@selector(dosomething)])
+        [self.myDelegte doSomething];
+    }
 
 
    为啥要加if判断一下？因为在程序写完以后，我们并不知道代理有没有实现这个方法。如果我们就是不判断呢？在代理中实现了这个方法当然没有问题，如果没实现就会报经典错误unrecognized selector sent to instance，也就是无法识别这个selector。不多做解释了，理解起来很简单，我让代理掉dosomething，代理不实现代理方法，自然就找不到这个消息（selector）。
