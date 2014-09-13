@@ -1,0 +1,344 @@
+这两天发布了iPhone6 和6+， 还有手表，可穿戴果然还是大势所趋。
+然后整理了一些心情，过些天要去找工作，开始在博客里更新一些有趣的topic。
+
+今天主要讲一下那啥! **浅谈runtime 运行机制及其应用**
+
+OC运行时是老生常谈了。因为啥呢？因为你玩OC就代表你玩的是一套dynamic的语言，我们写的所有oc代码最终都转换成了运行时代码，oc的一切一切都是基于runtime实现的。
+如果下面还有时间的话会谈几个例子说明下常用的runtime使用，只能说是非常强大，本人资历尚浅，懂得太少。
+
+理解运行时，可以如下思考：
+
+首先，谈到运行时，就得谈下c语言，不得不提到compiler，传统面向过程的c compiler逻辑是比较简单的，但是compiler的优化是非常难的，本人完全不懂，就不讨论了。compiler最基础的逻辑是吧函数名称转化成一个相对的内存地址，把函数内的语句转化成jmp指令，运行程序就能调用正确的语句找到函数。
+
+感觉听上去不是很高大上的，一切都在掌握之中，但是，程序员觉得没啥意思。我们希望开发面向对象的语言能够非常灵活，比如说，面向对象语言c++。c++开始有了class概念，这时候编译器要增加什么呢？不就是多了一个类吗？
+
+简单。我有class了，要run一个func的时候，compiler先找下这个class里的instance，然后了解了他的Class，return些什么，需要什么praram等等。然后我就jmp过去。这样，同样的函数，我类不一样，结果自然也不一样，这就是相对面向对象开发的优点。但是c++不是dynamic的，它还是不够动态，依然是static的。
+
+怎样能更加灵活呢？我们看了一下，哦，原来这个Class的所谓环境已经确定好了。那好了，我们就完全把Class抽象出来，类名可以在运行的时候检测获得，属性，变量，方法都可以在运行环境中检测，添加，删除等等。这时候compiler就相当复杂了，但是这样极大的增强了语言的灵活性，也更加强壮robust。不论是c还是c++，都有可能在jmp的时候跳转到非法地址导致崩掉，但是runtime机制提高了程序的安全性。（不得不赞一下compiler dev还runtime environment 的dev）。
+
+讲到这里你是不是想到了啥？
+iOS开发中最常见的模式之一 --delegate实现。由于Cocoa程序大量地使用Protocol-Delegate的设计模式，因此绝大部分的delegate指针类型必须是id，以满足运行时delegate的动态替换。
+
+- (void)test{
+if ([self.myDelegate respondsToSelector:@selector(dosomething)])
+	[self.myDelegte doSomething];
+}
+
+
+   为啥要加if判断一下？因为在程序写完以后，我们并不知道代理有没有实现这个方法。如果我们就是不判断呢？在代理中实现了这个方法当然没有问题，如果没实现就会报经典错误unrecognized selector sent to instance，也就是无法识别这个selector。不多做解释了，理解起来很简单，我让代理掉dosomething，代理不实现代理方法，自然就找不到这个消息（selector）。
+
+	以前可能稀里糊涂的觉得这样判断是因为安全考虑，其实底层来讲就是运行时机制在帮忙，这就是动态语言的特点，我们无时无刻的在享受着运行时机制为我们带来的便利。
+
+
+好了后面就仔细讲讲dynamic feature吧。
+
+Objective-C具有相当多的动态特性，基本的，也是经常被提到和用到的有动态类型（Dynamic typing），动态绑定（Dynamic binding）和动态加载（Dynamic loading）虽然在平常的Cocoa开发中这些较底层的运行特性很少用，但是，正是因为它的底层，dynamic可以做的事情非常多，比如动态创建一个类，动态创建一个成员变量，动态创建一个方法等等。基本的动态特性在常规的Cocoa开发中非常常用，特别是动态类型和动态绑定。
+
+动态特性基础
+1、动态类型
+
+即运行时再决定对象的类型。这类动态特性在日常应用非常常见，简单说就是id类型。id类型即通用的对象类，任何对象都可以被id指针所指，而在实际使用中，往往使用introspection来确定该对象的实际所属类：
+
+		id obj = someInstance;  
+		if ([obj isKindOfClass:someClass])  
+		{
+    someClass *classSpecifiedInstance = (someClass *)obj;
+    // Do Something to classSpecifiedInstance which now is an instance of someClass
+    //...
+		}
+-isMemberOfClass: 是 NSObject 的方法，用以确定某个 NSObject 对象是否是某个类的成员。与之相似的为 -isKindOfClass:，可以用以确定某个类是否是某个类或其子类。这两个方法为典型的introspection方法。在确定对象为某类成员后，可以安全地进行强制转换，继续之后的工作，因此这里的安全判断又是一种运行时的体现。
+
+2、动态绑定
+
+基于动态类型，在某个实例对象被确定后，其类型便被确定了。该对象对应的属性和响应的消息也被完全确定，这就是动态绑定。
+
+在继续之前，需要明确Objective-C中消息selector的概念。由于OC的动态特性，在OC中其实很少提及“函数”的概念，传统的函数一般在编译时就已经把参数信息和函数实现打包到编译后的源码中了，而在OC中最常使用的是消息机制。
+
+调用一个实例的方法，所做的是向该实例的指针发送消息，实例在收到消息后，从自身的实现中寻找响应这条消息的方法。
+我们援引官方文档中的介绍我再给翻译一下子：
+
+	The objc_msgSend Function
+	runtime中的消息发送函数
+
+In Objective-C, messages aren’t bound to method implementations until runtime. The compiler converts a message expression,
+在oc中，消息直到运行的时候才会绑定到方法实现，
+
+[receiver message]
+into a call on a messaging function, objc_msgSend. This function takes the receiver and the name of the method mentioned in the message—that is, the method selector—as its two principal parameters:
+
+objc_msgSend(receiver, selector)
+
+这个发送消息的oc代码[receiver message]在运行的时候才会转换成可调用的函数objc_msgSend。
+这个函数会取得接受者（也就是谁接受这个消息谁执行这个消息转换后的函数），还有这个方法的名字--也就是说这个selector有两个参数，objc_msgSend(receiver, selector)。
+
+
+Any arguments passed in the message are also handed to objc_msgSend:
+
+objc_msgSend(receiver, selector, arg1, arg2, ...)
+
+在消息中传递的所有参数都会传到这个函数里面。
+
+The messaging function does everything necessary for dynamic binding:
+
+It first finds the procedure (method implementation) that the selector refers to. Since the same method can be implemented differently by separate classes, the precise procedure that it finds depends on the class of the receiver.
+It then calls the procedure, passing it the receiving object (a pointer to its data), along with any arguments that were specified for the method.
+Finally, it passes on the return value of the procedure as its own return value.
+
+消息函数为动态绑定做好一切铺垫：
+首先：会找到这个方法实现。因为相同的方法可以在不同的类中实现，所以精确的实现是由这个消息接受者决定的。
+然后消息函数会调用这个实现，为它传接受者（指向它的数据的指针）还有所有必要参数。
+最后将实现的返回值作为自己的返回值将其返回。
+
+不好理解的话我就来举一个例子：
+我们先新建一个类叫Person，里面又这个属性
+@property （nonatomic, assign）int age;
+
+在主函数中我们创建一个Person 对象p：
+Person *p = [[Person alloc] init];
+然后为他设置年龄：
+p.age = 20;
+这样这人就有年龄20岁。但是这样写点语法不好看，实际上是什么样子的呢？一个简单的setter：
+[p setAge:20];
+这是啥？oc超优秀的可读性告诉我们，给p对象发送一条消息，这时候p对象就是接受者！
+他把年龄设置为20岁！
+ok了，然后底层c语言怎么干的呢？
+先找到Person类中的这个方法的实现：
+setAge：
+然后调用这个方法并为他传值20。
+也就是写为
+objc_msgSend(p, @selector(setAge:), 20);
+这样这个方法就调用了，功能也就实现了。
+这样理解是不是很简单呢？
+再来，我们继续为Person添加两个属性，一个name，一个gender；
+如何能获得该类的属性？有朋友说，不是有声明吗？
+但是如果是私有的呢？你怎么处理？
+当然答案只有一个就是运行时。
+unsign int count = 0;
+
+Ivar *ivars = class_copyIvarList([Person class], &count);
+
+//这里的*ivars是指向数组的指针。
+for (int i = 0; i <count; i++){
+Ivar ivar = ivar[i];
+// 取出i位置的成员变量
+const char *propertyName = ivar_getName(ivar);
+
+//这样就轻松的搞到所有的成员变量了～
+//只是知道成员属性当然还是不够的；我们要知道他是何种类型啊！
+//没错，还是OC运行时。
+const char *PropertyType = ivar_getTypeEncoding(ivar);
+//  这样就可以轻松的拿到属性类型。
+}
+
+你问我搞这个有啥实际意义吗？当然有，比如实现NSCoding的编码。
+类中应该实现两个协议，一个是encoding 一个是decoding。
+要写encodeobject： forekey: 还有decodeobject： forekey:。
+假设又100个成员变量不就写死了吗？来我们用运行时解决：
+- (void)encodeWithCoder:(NScoder *)coder
+{
+    unsign int count = 0;
+
+    Ivar *ivars = class_copyIvarList([Person class], &count);
+
+    for (int i = 0; i <count; i++){
+        Ivar ivar = ivar[i];
+
+        const char *propertyName = ivar_getName(ivar);
+
+        const char *PropertyType = ivar_getTypeEncoding(ivar);
+
+NSString *key = [NSString stringWIthUTF8string: name];
+        [coder encodeObject:[self valueForKeyPath:name] forKey:key];
+        }
+}
+这样就能简单方便的遍历所有属性并对其进行赋值归档了。
+
+
+动态绑定所做的，即是在实例所属类确定后，将某些属性和相应的方法绑定到实例上。这里所指的属性和方法当然包括了原来没有在类中实现的，而是在运行时才需要的新加入的实现。后面我会讲一些会用到的runtime类来为类添加实现。
+在Cocoa层，我们一般向一个NSObject对象发送-respondsToSelector:或者-instancesRespondToSelector:等来确定对象是否可以对某个SEL做出响应，而在OC消息转发机制被触发之前，对应的类的+resolveClassMethod:和+resolveInstanceMethod:将会被调用，在此时有机会动态地向类或者实例添加新的方法（使用class_addMethod），也即类的实现是可以动态绑定的。一个例子：
+
+void dynamicMethodIMP(id self, SEL _cmd)  
+{
+    // implementation ....
+}
+
+
+//该方法在OC消息转发生效前被调用
++ (BOOL) resolveInstanceMethod:(SEL)aSEL
+{ 
+    if (aSEL == @selector(resolveThisMethodDynamically)) {
+        //向[self class]中新加入返回为void的实现，SEL名字为aSEL，实现的具体内容为dynamicMethodIMP class_addMethod([self class], aSEL, (IMP) dynamicMethodIMP, “v@:”);
+        return YES;
+    }
+    return [super resolveInstanceMethod:aSel];
+}  
+当然也可以在任意需要的地方调用class_addMethod或者method_setImplementation（前者添加实现，后者替换实现），来完成动态绑定的需求。
+
+这个有啥用处？
+举个例子：替换系统方法。详细的一个应用我放在动态加载中。
+
+
+3、动态加载
+
+根据需求加载所需要的资源，这点很容易理解，对于iOS开发来说，基本就是根据不同的机型做适配。最经典的例子就是在Retina设备上加载@2x的图片，而在老一些的普通屏设备上加载原图。
+
+在加载资源的时候，一种比较笨的方法是：拿到系统版本或者通过屏幕尺寸分辨率等等进行判断。
+这里以iOS7， iOS8适配为例子。
+
+BOOL iOS8 = [[UIdevice currentDevive].systemzVersion floatValue] >= 8.0;
+这样就是可以if（iOS8）｛.....｝
+但是这样写明显很蛋疼，如果加载1000张要写1000次，代码质量可想而知。
+那咋办？我们为系统添加一个分类实现不同的系统加载不同的图片：
+添加分类方法：
+
++ （UIImage *）imageSmartLoaderWithImageNamed:(NSString *)name
+{
+    BOOL iOS8 = [[UIdevice currentDevive].systemzVersion floatValue] >= 8.0;
+UIImage *image = nil;
+    if(iOS8)
+    {
+        name = [name stringByAppendingString@"_OS8"];
+        // 可以加载名称为_OS8的图片了
+image = [UIImage imageNamed:name];
+}else{
+    image = [UIImage imageNamed:name];
+}
+
+    return image;
+}
+
+这样写看上去不错，确实解决了适配问题。
+
+但是这是基于你的项目是一开始就设计好的。因为很多初期的iOS程序员都是c语言程序员，面向对象的封装做的确实很烂，如果翻一下很久以前的oc项目代码，就能发现这种情况。
+如果项目做了很久了，从iOS5开始，现在要适配678，以前没这么写的话重新改一遍代码是很恶心的。
+在分类里面也不能重写imageNamed方法，分类是比类powerful的，一重写imageNamed方法就完蛋了。
+
+怎么办？乾坤大挪移。
+运行时，用我们自己的方法替换掉系统的方法就ok了。
+
+在分类中
+
+//在分类加载进内存的时候会调用这个方法
++ (void)load
+{
+    Method otherMehtod = class_getClassMethod(self, @selector(imageSmartLoaderWithImageNamed:));
+    Method originMehtod = class_getClassMethod(self, @selector(imageNamed:));
+// 交换2个方法的实现
+    method_exchangeImplementations(otherMehtod, originMehtod);
+}
+
+// 这里写的虽然是imageWithName 其实已经是imageNamed了。
++ （UIImage *）imageSmartLoaderWithImageNamed:(NSString *)name
+{
+BOOL iOS8 = [[UIDevice currentDevice].systemVersion floatValue] >= 8.0;
+UIImage *image = nil;
+if (iOS8) {
+NSString *newName = [name stringByAppendingString:@"_OS8"];
+
+//这里容易混淆的是这里不能调用imageNamed方法了，因为这时候两个方法已经调换了，如果再调用系统方法，就会死循环。
+image = [UIImage imageSmartLoaderWithImageNamed:newName];
+}
+
+if (image == nil) {
+image = [UIImage imageSmartLoaderWithImageNamed:name];
+}
+return image;
+}
+
+随着Retina iPad的推出，和之后可能的Retina Mac的出现，这个特性相信会被越来越多地使用。
+
+当然这里仅仅是举出一个运行时添加方法，修改方法的一个例子，但是开发的时候还是设计好一些为好，毕竟其他人看起来会摸不着头脑。
+
+这个家伙学名叫做 swizzle。但是大家学会了不要乱搞～
+
+趁热打铁，再举一个小例子：
+
+如果我们想要提供一个接口，为数组添加元素
+
+NSMuableArray *array = [NSMuableArray array];
+
+但是可能会有人添加一个nil进去。。。这时候运行就直接crash掉。数组不能放nil的。
+咋办？
+runtime：
+
+@implementation NSMutableArray(Extension)
+
+
++ (void)load
+{
+Method otherMethod = class_getInstanceMethod(:NSClassFromString(@"__NSArrayM", @selector(zc_addObject:));
+Method originMethod = class_getInstanceMethod(:NSClassFromString(@"__NSArrayM", @selector(addObject:));
+
+    method_exchangeImplementations(otherMethod, originMethod);
+
+}
+// 解决了添加元素为空的时候运行时崩溃的问题
+- (void)zc_addObject:(id)object
+{
+    if (object != nil) {
+    [self zc_addObject:object];
+
+    }
+
+}
+
+//同理交换 objectAtIndex和 自定义方法
+// 解决了 访问角标越界的问题
+- (id)zc_objectAtIndex:(NSUInteger)index
+{
+if (index < self.count) {
+return [self zc_objectAtIndex:index];
+} else {
+//这样就不会报错了
+ return nil;
+}
+}
+
+@end
+
+但是实际开发中不推荐这么使用，不报错不一定是什么好事情！
+
+再举出一个例子来讲讲适配问题。
+比如在开发Universal应用或者游戏时，如果使用IB构建了大量的自定义的UI，那么在由iPhone版转向iPad版的过程中所面临的一个重要问题就是如何从不同的nib中加载界面。在iOS5之前，所有的UIViewController在使用默认的界面加载时(init或者initWithNibName:bundle:)，都会走-loadNibNamed:owner:options:。而因为我们无法拿到-loadNibNamed:owner:options的实现，因此对其重载是比较困难而且存在风险的。因此在做iPad版本的nib时，一个简单的办法是将所有的nib的命名方式统一，然后使用自己实现的新的类似-loadNibNamed:owner:options的方法将原方法替换掉，同时保证非iPad的设备还走原来的loadNibNamed:owner:options方法。使用OC运行时特性可以较简单地完成这一任务。
+
+代码如下，在程序运行时调用+swizze，交换自己实现的loadPadNibNamed:owner:options和系统的loadNibNamed:owner:options，之后所有的loadNibNamed:owner:options消息都将会发为loadPadNibNamed:owner:options，由自己的代码进行处理。
+
++(BOOL)swizze {
+Method oldMethod = class_getInstanceMethod(self, @selector(loadNibNamed:owner:options:));
+if (!oldMethod) {
+return NO;
+}
+Method newMethod = class_getInstanceMethod(self, @selector(loadPadNibNamed:owner:options:));
+if (!newMethod) {
+return NO;
+}
+method_exchangeImplementations(oldMethod, newMethod);
+return YES;
+}
+loadPadNibNamed:owner:options的实现如下，注意在其中的loadPadNibNamed:owner:options由于之前已经进行了交换，因此实际会发送为系统的loadNibNamed:owner:options。以此完成了对不同资源的加载。
+
+-(NSArray *)loadPadNibNamed:(NSString *)name owner:(id)owner options:(NSDictionary *)options {
+NSString *newName = [name stringByReplacingOccurrencesOfString:@"@pad" withString:@""];
+newName = [newName stringByAppendingFormat:@"@pad"];
+//判断是否存在
+NSFileManager *fm = [NSFileManager defaultManager];
+NSString* filepath = [[NSBundle mainBundle] pathForResource:newName ofType:@”nib”];
+//这里调用的loadPadNibNamed:owner:options:实际为为交换后的方法，即loadNibNamed:owner:options:
+if ([fm fileExistsAtPath:filepath]) {
+return [self loadPadNibNamed:newName owner:owner options:options];
+} else {
+return [self loadPadNibNamed:name owner:owner options:options];
+}
+}
+
+
+
+
+
+
+
+
+
+
+
+
