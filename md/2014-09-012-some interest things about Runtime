@@ -28,7 +28,7 @@ iOS开发中最常见的模式之一 --delegate实现。由于Cocoa程序大量�
 
    为啥要加if判断一下？因为在程序写完以后，我们并不知道代理有没有实现这个方法。如果我们就是不判断呢？在代理中实现了这个方法当然没有问题，如果没实现就会报经典错误unrecognized selector sent to instance，也就是无法识别这个selector。不多做解释了，理解起来很简单，我让代理掉dosomething，代理不实现代理方法，自然就找不到这个消息（selector）。
 
-	以前可能稀里糊涂的觉得这样判断是因为安全考虑，其实底层来讲就是运行时机制在帮忙，这就是动态语言的特点，我们无时无刻的在享受着运行时机制为我们带来的便利。
+以前可能稀里糊涂的觉得这样判断是因为安全考虑，其实底层来讲就是运行时机制在帮忙，这就是动态语言的特点，我们无时无刻的在享受着运行时机制为我们带来的便利。
 
 
 好了后面就仔细讲讲dynamic feature吧。
@@ -36,6 +36,7 @@ iOS开发中最常见的模式之一 --delegate实现。由于Cocoa程序大量�
 Objective-C具有相当多的动态特性，基本的，也是经常被提到和用到的有动态类型（Dynamic typing），动态绑定（Dynamic binding）和动态加载（Dynamic loading）虽然在平常的Cocoa开发中这些较底层的运行特性很少用，但是，正是因为它的底层，dynamic可以做的事情非常多，比如动态创建一个类，动态创建一个成员变量，动态创建一个方法等等。基本的动态特性在常规的Cocoa开发中非常常用，特别是动态类型和动态绑定。
 
 动态特性基础
+
 1、动态类型
 
 即运行时再决定对象的类型。这类动态特性在日常应用非常常见，简单说就是id类型。id类型即通用的对象类，任何对象都可以被id指针所指，而在实际使用中，往往使用introspection来确定该对象的实际所属类：
@@ -67,10 +68,10 @@ In Objective-C, messages aren’t bound to method implementations until runtime.
         [receiver message]
 into a call on a messaging function, objc_msgSend. This function takes the receiver and the name of the method mentioned in the message—that is, the method selector—as its two principal parameters:
 
-objc_msgSend(receiver, selector)
+        objc_msgSend(receiver, selector)
 
 这个发送消息的oc代码[receiver message]在运行的时候才会转换成可调用的函数objc_msgSend。
-这个函数会取得接受者（也就是谁接受这个消息谁执行这个消息转换后的函数），还有这个方法的名字--也就是说这个selector有两个参数， objc_msgSend(receiver, selector)。
+这个函数会取得接受者（也就是谁接受这个消息谁执行这个消息转换后的函数），还有这个方法的名字--也就是说这个selector有两个参数，objc_msgSend(receiver, selector)。
 
 
 Any arguments passed in the message are also handed to objc_msgSend:
@@ -92,87 +93,87 @@ Finally, it passes on the return value of the procedure as its own return value.
 
 不好理解的话我就来举一个例子：
 我们先新建一个类叫Person，里面又这个属性
-@property （nonatomic, assign）int age;
+        @property （nonatomic, assign）int age;
 
 在主函数中我们创建一个Person 对象p：
-Person *p = [[Person alloc] init];
+        Person *p = [[Person alloc] init];
 然后为他设置年龄：
-p.age = 20;
+        p.age = 20;
 这样这人就有年龄20岁。但是这样写点语法不好看，实际上是什么样子的呢？一个简单的setter：
-[p setAge:20];
+        [p setAge:20];
 这是啥？oc超优秀的可读性告诉我们，给p对象发送一条消息，这时候p对象就是接受者！
 他把年龄设置为20岁！
 ok了，然后底层c语言怎么干的呢？
 先找到Person类中的这个方法的实现：
-setAge：
+        setAge：
 然后调用这个方法并为他传值20。
 也就是写为
-objc_msgSend(p, @selector(setAge:), 20);
+        objc_msgSend(p, @selector(setAge:), 20);
 这样这个方法就调用了，功能也就实现了。
 这样理解是不是很简单呢？
 再来，我们继续为Person添加两个属性，一个name，一个gender；
 如何能获得该类的属性？有朋友说，不是有声明吗？
 但是如果是私有的呢？你怎么处理？
 当然答案只有一个就是运行时。
-unsign int count = 0;
+        unsign int count = 0;
 
-Ivar *ivars = class_copyIvarList([Person class], &count);
+        Ivar *ivars = class_copyIvarList([Person class], &count);
 
-//这里的*ivars是指向数组的指针。
-for (int i = 0; i <count; i++){
-Ivar ivar = ivar[i];
-// 取出i位置的成员变量
-const char *propertyName = ivar_getName(ivar);
+        //这里的*ivars是指向数组的指针。
+        for (int i = 0; i <count; i++){
+            Ivar ivar = ivar[i];
+            // 取出i位置的成员变量
+            const char *propertyName = ivar_getName(ivar);
 
-//这样就轻松的搞到所有的成员变量了～
-//只是知道成员属性当然还是不够的；我们要知道他是何种类型啊！
-//没错，还是OC运行时。
-const char *PropertyType = ivar_getTypeEncoding(ivar);
-//  这样就可以轻松的拿到属性类型。
-}
+                //这样就轻松的搞到所有的成员变量了～
+            //只是知道成员属性当然还是不够的；我们要知道他是何种类型啊！
+            //没错，还是OC运行时。
+            const char *PropertyType = ivar_getTypeEncoding(ivar);
+            //  这样就可以轻松的拿到属性类型。
+        }
 
 你问我搞这个有啥实际意义吗？当然有，比如实现NSCoding的编码。
 类中应该实现两个协议，一个是encoding 一个是decoding。
 要写encodeobject： forekey: 还有decodeobject： forekey:。
 假设又100个成员变量不就写死了吗？来我们用运行时解决：
-- (void)encodeWithCoder:(NScoder *)coder
-{
-    unsign int count = 0;
+        - (void)encodeWithCoder:(NScoder *)coder
+        {
+            unsign int count = 0;
 
-    Ivar *ivars = class_copyIvarList([Person class], &count);
+            Ivar *ivars = class_copyIvarList([Person class], &count);
 
-    for (int i = 0; i <count; i++){
-        Ivar ivar = ivar[i];
+            for (int i = 0; i <count; i++){
+                Ivar ivar = ivar[i];
 
-        const char *propertyName = ivar_getName(ivar);
+                const char *propertyName = ivar_getName(ivar);
 
-        const char *PropertyType = ivar_getTypeEncoding(ivar);
+                    const char *PropertyType = ivar_getTypeEncoding(ivar);
 
-NSString *key = [NSString stringWIthUTF8string: name];
-        [coder encodeObject:[self valueForKeyPath:name] forKey:key];
+                    NSString *key = [NSString stringWIthUTF8string: name];
+                    [coder encodeObject:[self valueForKeyPath:name] forKey:key];
+                }
         }
-}
 这样就能简单方便的遍历所有属性并对其进行赋值归档了。
 
 
 动态绑定所做的，即是在实例所属类确定后，将某些属性和相应的方法绑定到实例上。这里所指的属性和方法当然包括了原来没有在类中实现的，而是在运行时才需要的新加入的实现。后面我会讲一些会用到的runtime类来为类添加实现。
 在Cocoa层，我们一般向一个NSObject对象发送-respondsToSelector:或者-instancesRespondToSelector:等来确定对象是否可以对某个SEL做出响应，而在OC消息转发机制被触发之前，对应的类的+resolveClassMethod:和+resolveInstanceMethod:将会被调用，在此时有机会动态地向类或者实例添加新的方法（使用class_addMethod），也即类的实现是可以动态绑定的。一个例子：
 
-void dynamicMethodIMP(id self, SEL _cmd)  
-{
-    // implementation ....
-}
+        void dynamicMethodIMP(id self, SEL _cmd)
+        {
+            // implementation ....
+        }
 
 
 //该方法在OC消息转发生效前被调用
-+ (BOOL) resolveInstanceMethod:(SEL)aSEL
-{ 
-    if (aSEL == @selector(resolveThisMethodDynamically)) {
-        //向[self class]中新加入返回为void的实现，SEL名字为aSEL，实现的具体内容为dynamicMethodIMP class_addMethod([self class], aSEL, (IMP) dynamicMethodIMP, “v@:”);
-        return YES;
-    }
-    return [super resolveInstanceMethod:aSel];
-}  
+        + (BOOL) resolveInstanceMethod:(SEL)aSEL
+        { 
+            if (aSEL == @selector(resolveThisMethodDynamically)) {
+                //向[self class]中新加入返回为void的实现，SEL名字为aSEL，实现的具体内容为dynamicMethodIMP class_addMethod([self class], aSEL, (IMP) dynamicMethodIMP, “v@:”);
+                return YES;
+            }
+            return [super resolveInstanceMethod:aSel];
+        }  
 当然也可以在任意需要的地方调用class_addMethod或者method_setImplementation（前者添加实现，后者替换实现），来完成动态绑定的需求。
 
 这个有啥用处？
@@ -192,21 +193,21 @@ BOOL iOS8 = [[UIdevice currentDevive].systemzVersion floatValue] >= 8.0;
 那咋办？我们为系统添加一个分类实现不同的系统加载不同的图片：
 添加分类方法：
 
-+ （UIImage *）imageSmartLoaderWithImageNamed:(NSString *)name
-{
-    BOOL iOS8 = [[UIdevice currentDevive].systemzVersion floatValue] >= 8.0;
-UIImage *image = nil;
-    if(iOS8)
-    {
-        name = [name stringByAppendingString@"_OS8"];
-        // 可以加载名称为_OS8的图片了
-image = [UIImage imageNamed:name];
-}else{
-    image = [UIImage imageNamed:name];
-}
+        + （UIImage *）imageSmartLoaderWithImageNamed:(NSString *)name
+        {
+            BOOL iOS8 = [[UIdevice currentDevive].systemzVersion floatValue] >= 8.0;
+        UIImage *image = nil;
+            if(iOS8)
+            {
+                name = [name stringByAppendingString@"_OS8"];
+                // 可以加载名称为_OS8的图片了
+        image = [UIImage imageNamed:name];
+        }else{
+            image = [UIImage imageNamed:name];
+        }
 
-    return image;
-}
+            return image;
+        }
 
 这样写看上去不错，确实解决了适配问题。
 
@@ -219,32 +220,32 @@ image = [UIImage imageNamed:name];
 
 在分类中
 
-//在分类加载进内存的时候会调用这个方法
-+ (void)load
-{
-    Method otherMehtod = class_getClassMethod(self, @selector(imageSmartLoaderWithImageNamed:));
-    Method originMehtod = class_getClassMethod(self, @selector(imageNamed:));
-// 交换2个方法的实现
-    method_exchangeImplementations(otherMehtod, originMehtod);
-}
+        //在分类加载进内存的时候会调用这个方法
+        + (void)load
+        {
+            Method otherMehtod = class_getClassMethod(self, @selector(imageSmartLoaderWithImageNamed:));
+            Method originMehtod = class_getClassMethod(self, @selector(imageNamed:));
+        // 交换2个方法的实现
+            method_exchangeImplementations(otherMehtod, originMehtod);
+        }
 
-// 这里写的虽然是imageWithName 其实已经是imageNamed了。
-+ （UIImage *）imageSmartLoaderWithImageNamed:(NSString *)name
-{
-BOOL iOS8 = [[UIDevice currentDevice].systemVersion floatValue] >= 8.0;
-UIImage *image = nil;
-if (iOS8) {
-NSString *newName = [name stringByAppendingString:@"_OS8"];
+        // 这里写的虽然是imageWithName 其实已经是imageNamed了。
+        + （UIImage *）imageSmartLoaderWithImageNamed:(NSString *)name
+        {
+                BOOL iOS8 = [[UIDevice currentDevice].systemVersion floatValue] >= 8.0;
+                UIImage *image = nil;
+                if (iOS8) {
+                NSString *newName = [name stringByAppendingString:@"_OS8"];
 
-//这里容易混淆的是这里不能调用imageNamed方法了，因为这时候两个方法已经调换了，如果再调用系统方法，就会死循环。
-image = [UIImage imageSmartLoaderWithImageNamed:newName];
-}
+                //这里容易混淆的是这里不能调用imageNamed方法了，因为这时候两个方法已经调换了，如果再调用系统方法，就会死循环。
+                image = [UIImage imageSmartLoaderWithImageNamed:newName];
+                }
 
-if (image == nil) {
-image = [UIImage imageSmartLoaderWithImageNamed:name];
-}
-return image;
-}
+                if (image == nil) {
+                    image = [UIImage imageSmartLoaderWithImageNamed:name];
+                    }
+            return image;
+        }
 
 随着Retina iPad的推出，和之后可能的Retina Mac的出现，这个特性相信会被越来越多地使用。
 
@@ -262,40 +263,40 @@ NSMuableArray *array = [NSMuableArray array];
 咋办？
 runtime：
 
-@implementation NSMutableArray(Extension)
+        @implementation NSMutableArray(Extension)
 
 
-+ (void)load
-{
-Method otherMethod = class_getInstanceMethod(:NSClassFromString(@"__NSArrayM", @selector(zc_addObject:));
-Method originMethod = class_getInstanceMethod(:NSClassFromString(@"__NSArrayM", @selector(addObject:));
+        + (void)load
+        {
+            Method otherMethod = class_getInstanceMethod(:NSClassFromString(@"__NSArrayM", @selector(zc_addObject:));
+            Method originMethod = class_getInstanceMethod(:NSClassFromString(@"__NSArrayM", @selector(addObject:));
 
-    method_exchangeImplementations(otherMethod, originMethod);
+                method_exchangeImplementations(otherMethod, originMethod);
 
-}
-// 解决了添加元素为空的时候运行时崩溃的问题
-- (void)zc_addObject:(id)object
-{
-    if (object != nil) {
-    [self zc_addObject:object];
+        }
+        // 解决了添加元素为空的时候运行时崩溃的问题
+        - (void)zc_addObject:(id)object
+        {
+            if (object != nil) {
+            [self zc_addObject:object];
 
-    }
+            }
 
-}
+        }
 
-//同理交换 objectAtIndex和 自定义方法
-// 解决了 访问角标越界的问题
-- (id)zc_objectAtIndex:(NSUInteger)index
-{
-if (index < self.count) {
-return [self zc_objectAtIndex:index];
-} else {
-//这样就不会报错了
- return nil;
-}
-}
+        //同理交换 objectAtIndex和 自定义方法
+        // 解决了 访问角标越界的问题
+        - (id)zc_objectAtIndex:(NSUInteger)index
+        {
+            if (index < self.count) {
+            return [self zc_objectAtIndex:index];
+            } else {
+            //这样就不会报错了
+             return nil;
+            }
+        }
 
-@end
+        @end
 
 但是实际开发中不推荐这么使用，不报错不一定是什么好事情！
 
@@ -304,33 +305,33 @@ return [self zc_objectAtIndex:index];
 
 代码如下，在程序运行时调用+swizze，交换自己实现的loadPadNibNamed:owner:options和系统的loadNibNamed:owner:options，之后所有的loadNibNamed:owner:options消息都将会发为loadPadNibNamed:owner:options，由自己的代码进行处理。
 
-+(BOOL)swizze {
-Method oldMethod = class_getInstanceMethod(self, @selector(loadNibNamed:owner:options:));
-if (!oldMethod) {
-return NO;
-}
-Method newMethod = class_getInstanceMethod(self, @selector(loadPadNibNamed:owner:options:));
-if (!newMethod) {
-return NO;
-}
-method_exchangeImplementations(oldMethod, newMethod);
-return YES;
-}
+        +(BOOL)swizze {
+            Method oldMethod = class_getInstanceMethod(self, @selector(loadNibNamed:owner:options:));
+            if (!oldMethod) {
+                return NO;
+            }
+            Method newMethod = class_getInstanceMethod(self, @selector(loadPadNibNamed:owner:options:));
+            if (!newMethod) {
+                return NO;
+            }
+            method_exchangeImplementations(oldMethod, newMethod);
+            return YES;
+        }
 loadPadNibNamed:owner:options的实现如下，注意在其中的loadPadNibNamed:owner:options由于之前已经进行了交换，因此实际会发送为系统的loadNibNamed:owner:options。以此完成了对不同资源的加载。
 
--(NSArray *)loadPadNibNamed:(NSString *)name owner:(id)owner options:(NSDictionary *)options {
-NSString *newName = [name stringByReplacingOccurrencesOfString:@"@pad" withString:@""];
-newName = [newName stringByAppendingFormat:@"@pad"];
-//判断是否存在
-NSFileManager *fm = [NSFileManager defaultManager];
-NSString* filepath = [[NSBundle mainBundle] pathForResource:newName ofType:@”nib”];
-//这里调用的loadPadNibNamed:owner:options:实际为为交换后的方法，即loadNibNamed:owner:options:
-if ([fm fileExistsAtPath:filepath]) {
-return [self loadPadNibNamed:newName owner:owner options:options];
-} else {
-return [self loadPadNibNamed:name owner:owner options:options];
-}
-}
+        -(NSArray *)loadPadNibNamed:(NSString *)name owner:(id)owner options:(NSDictionary *)options {
+            NSString *newName = [name stringByReplacingOccurrencesOfString:@"@pad" withString:@""];
+            newName = [newName stringByAppendingFormat:@"@pad"];
+            //判断是否存在
+            NSFileManager *fm = [NSFileManager defaultManager];
+            NSString* filepath = [[NSBundle mainBundle] pathForResource:newName ofType:@”nib”];
+            //这里调用的loadPadNibNamed:owner:options:实际为为交换后的方法，即loadNibNamed:owner:options:
+            if ([fm fileExistsAtPath:filepath]) {
+                return [self loadPadNibNamed:newName owner:owner options:options];
+            } else {
+                return [self loadPadNibNamed:name owner:owner options:options];
+            }
+        }
 
 
 
