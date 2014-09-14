@@ -17,15 +17,15 @@ isa 奠定了oc消息机制的基础。当接受者收到消息的时候，消�
 
 比如，下面的KVC代码：
 
-[person setValue:@"personName" forKey:@"name"];
+        [person setValue:@"personName" forKey:@"name"];
 
 会被编译器处理成：
 　　
-SEL sel = sel_get_uid("setValue:forKey:");
+        SEL sel = sel_get_uid("setValue:forKey:");
 
-IMP method = objc_msg_lookup (person->isa,sel);
+        IMP method = objc_msg_lookup (person->isa,sel);
 
-method(person,sel,@"personName",@"name");
+        method(person,sel,@"personName",@"name");
 
 其中:
 
@@ -51,10 +51,12 @@ KVC在调用方法setValue的时候
 在调用类的方法的时候，最好要明确对象实例的类名。
 
 这样只有当我们调用KVC去访问key值的时候KVO才会起作用。所以肯定确定的是，KVO是基于KVC实现的。
-@interface  Person : NSObject
-@property (nonatomic, assign) int age;
+
+        @interface  Person : NSObject
+        @property (nonatomic, assign) int age;
 
 在主函数中创建Person 对象并添加监听：
+
         self.p = [[HMPerson alloc] init];
         // 设置其age为20；
         p.age = 20;
@@ -63,22 +65,26 @@ KVC在调用方法setValue的时候
 
 
 实现监听方法：
+
         - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
             {
             NSLog(@"%@对象的%@属性改变了：%@", object, keyPath, change);
             }
+
     当age的值发生改变的时候， 就会调用监听方法；
 
     那程序是如何知道值发生改变了呢？
 
-    实际上，当程序在运行时发现我们为p建立监听者的时候，会动态的创建一个继承于Person的类他的名字叫做NSKVONotifying_Person类；
-    并重写了setAge:方法；
+    实际上，当程序在运行时发现我们为p建立监听者的时候，会动态的创建一个继承于Person的类他的名字叫做
+`NSKVONotifying_Person`类；
+    并重写了`setAge:`方法；
+
         - （void）setAge:(int)age
         {
             [super setzAge:age];
 
             // 拿到监听器
-[bserver observeValueForKeyPath:@"age" ofObject:self changeNSKeyValueObservingOptionOld | NSKeyValueObservingOptionNew context:nil];
+        [bserver observeValueForKeyPath:@"age" ofObject:self changeNSKeyValueObservingOptionOld | NSKeyValueObservingOptionNew context:nil];
 
         }
 
@@ -91,6 +97,7 @@ KVC在调用方法setValue的时候
 就是发送消息，该方法接收多个参数，给接受者（p），setAge:，年龄30；
 
         objc_msgSend(p, @selector(setAge:), 30);
+
 该方法首先找到p所属的类，在该类中寻找setAge：；并把30传入。
 讲到这里，大家应该已经明白，如果改变p所属的类，那么该重写方法就可以实现了。
 没错，在运行的时候，p的类型已经变为了NSKVONotifying_Person。
