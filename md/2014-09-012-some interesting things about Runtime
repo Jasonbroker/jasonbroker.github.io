@@ -50,6 +50,10 @@ Objective-C具有相当多的动态特性，基本的，也是经常被提到和
 		}
 `-isMemberOfClass: `是 `NSObject` 的方法，用以确定某个 NSObject 对象是否是某个类的成员。与之相似的为 -isKindOfClass:，可以用以确定某个类是否是某个类或其子类。这两个方法为典型的introspection方法。在确定对象为某类成员后，可以安全地进行强制转换，继续之后的工作，因此这里的安全判断又是一种运行时的体现。
 
+    这里的`-isMemberOfClass: `以及`isKindOfClass:`本身是如何实现的呢？
+    这里提出一个新的概念叫做isa指针（isa pointer）。
+    要说isa就有太多内容要讲了，因此我把这部分放到另外一篇文章中讨论。
+
 ##2、动态绑定
 
 基于动态类型，在某个实例对象被确定后，其类型便被确定了。该对象对应的属性和响应的消息也被完全确定，这就是动态绑定。
@@ -104,7 +108,8 @@ Finally, it passes on the return value of the procedure as its own return value.
 这是啥？oc超优秀的可读性告诉我们，给p对象发送一条消息，这时候p对象就是接受者！
 他把年龄设置为20岁！
 ok了，然后底层c语言怎么干的呢？
-先找到Person类中的这个方法的实现：
+先找到p所在的类，然后找到这个方法的实现：
+（注意：这里面p的类是在运行时动态产生的，不一定是Person类，在我后面的KVO中会仔细讲这个问题）；
         setAge：
 然后调用这个方法并为他传值20。
 也就是写为
@@ -332,7 +337,6 @@ loadPadNibNamed:owner:options的实现如下，注意在其中的loadPadNibNamed
                 return [self loadPadNibNamed:name owner:owner options:options];
             }
         }
-
 
 
 
