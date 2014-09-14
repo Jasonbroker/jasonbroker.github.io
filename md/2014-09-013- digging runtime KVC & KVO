@@ -103,3 +103,5 @@ KVC在调用方法setValue的时候
 没错，在运行的时候，p的类型已经变为了NSKVONotifying_Person。
 
 由于这个操作并没有改变Person类本身，只是为子类（中间类）重写了setter，因此可以神不知鬼不觉的做到KVO监听了。
+
+参考一下超级大牛 Mattt的文章 http://nshipster.com/key-value-observing/
