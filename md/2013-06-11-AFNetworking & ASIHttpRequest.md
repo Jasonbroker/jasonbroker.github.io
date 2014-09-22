@@ -64,7 +64,7 @@ ASIHTTPRequestDataCompressor和ASIHTTPRequestDataDecompressor两个类，只用�
 3、性能对比
 
 这里引用子非あ鱼分别用AFN和ASI进行了测试，测试环境如下：iPhone5，联通3G信号全满，室内静止状态，请求国内双线机房独立服务器的静态文件，1~20K共20个文件，每个文件请求20次，记录从创建请求到完全下载文件的耗时，结果如下：
-![image001](http://smallerapp.com/favicon.ico "Title here")
+![image001](https://raw.githubusercontent.com/Jasonbroker/jasonbroker.github.io/master/supportingfiles/2013-06-11%20AFNetworking%20&%20ASIHttpRequest%20sup/image001.gif)
 1. AFN连续访问1 ~ 20K文件耗时
 ![image010](http://smallerapp.com/favicon.ico "Title here")
 2. ASI连续访问1 ~ 20K文件耗时
