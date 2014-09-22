@@ -8,6 +8,7 @@
 * 一般来说, 工具类设计为单例模式比较合适
 
 系统中的单例：常见的单例有
+
         [UIapplication sharedApplication];
         [NSFileManager defaultManager];
         [NSNotificationCenter defaultCenter];
@@ -15,17 +16,17 @@
 
 等等。
 
-        通常，这些对象在应用程序实例中只需要创建一份。
+通常，这些对象在应用程序实例中只需要创建一份。
 
 ##单例的简单创建
 
 一个完整的单例创建：
 
-可以使用该单例宏：**<    >**
 
 // .m
-        #if __has_feature(objc_arc) // is ARC
 
+        #if __has_feature(objc_arc) // is ARC
+        
         static id _instance = nil;
         + (id)allocWithZone:(struct _NSZone *)zone
         {
