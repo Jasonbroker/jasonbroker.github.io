@@ -64,35 +64,41 @@ ASIHTTPRequestDataCompressor和ASIHTTPRequestDataDecompressor两个类，只用�
 3、性能对比
 
 这里引用子非あ鱼分别用AFN和ASI进行了测试，测试环境如下：iPhone5，联通3G信号全满，室内静止状态，请求国内双线机房独立服务器的静态文件，1~20K共20个文件，每个文件请求20次，记录从创建请求到完全下载文件的耗时，结果如下：
+
 ![image001](https://raw.githubusercontent.com/Jasonbroker/jasonbroker.github.io/master/supportingfiles/2013-06-11%20AFNetworking%20&%20ASIHttpRequest%20sup/image001.gif)
+
 1. AFN连续访问1 ~ 20K文件耗时
-![image010](http://smallerapp.com/favicon.ico "Title here")
+![image010](https://raw.githubusercontent.com/Jasonbroker/jasonbroker.github.io/master/supportingfiles/2013-06-11%20AFNetworking%20&%20ASIHttpRequest%20sup/image010.gif)
 2. ASI连续访问1 ~ 20K文件耗时
 
 图2为AFN的记录图，绿色为20次请求中耗时最久的一次，蓝色为耗时最短的一次，黄色为去除最大值和最小值的18次平均值。从这个图可以看出，AFN最开始创建对象耗时近2.5秒，随后稳定下来，在3K、7K、15K和20K时出现了抖动。图2是ASI做相同测试的结果，首次创建对象近2.25秒，略优于AFN，同样在5K、11K、13K、14K和16K发生了一些抖动，但抖动幅度似乎小于AFN，可见稳定性更好一些。
 
 下边是把二者的测试结果放在一起的对比图，可以更直观的比较二者的区别。
 
-![image012](http://smallerapp.com/favicon.ico "Title here")
-            3. ASI和AFNresponse最大值对比
+![image012]((https://raw.githubusercontent.com/Jasonbroker/jasonbroker.github.io/master/supportingfiles/2013-06-11%20AFNetworking%20&%20ASIHttpRequest%20sup/image012.gif)
+
+3. ASI和AFNresponse最大值对比
+
 response时间最大值对比可以更明显的看出二者的抖动对比，ASI略好一些。
 
-![image014](http://smallerapp.com/favicon.ico "Title here")
-            4. ASI和AFN耗时最小值对比
+![image014]((https://raw.githubusercontent.com/Jasonbroker/jasonbroker.github.io/master/supportingfiles/2013-06-11%20AFNetworking%20&%20ASIHttpRequest%20sup/image014.gif)
+
+4. ASI和AFN耗时最小值对比
 
 最小值对比可以看出，在每一个大小的测试中ASI的最佳性能似乎都要优于AFN。
 
-![image016](http://smallerapp.com/favicon.ico "Title here")
-            5. ASI和AFN耗时平均值对比
+![image016]((https://raw.githubusercontent.com/Jasonbroker/jasonbroker.github.io/master/supportingfiles/2013-06-11%20AFNetworking%20&%20ASIHttpRequest%20sup/image016.gif)
+            
+5. ASI和AFN耗时平均值对比
 
 该图为耗时平均值的对比，更能够说明问题。文件小于12K的测试中ASI的性能优势并没有非常明显，超过12K以后，ASI优势开始明显起来，每一次请求都要比AFN节约20% ~ 30%，近0.1秒。同时从这张图上还可以看出，随着下载文件变大，请求耗时并不是线形增长的，这是由于一次请求大部分时间都消耗在建立连接上，而真正接收数据只占用了极少时间，这个问题不在本篇文章的讨论范围，所以不多说，有兴趣的读者可以移步http://segmentfault.com/t/ios进一步讨论。
 
 4、原理分析
 ASI的性能似乎全面优于AFN，那下边从二者的实现原理上看一下到底是什么原因造成这种差距。ASI基于CFNetwork框架开发，而AFN基于NSURL，底层的区别是导致二者性能差距的重要原因之一。
 
-![image018](http://smallerapp.com/favicon.ico "Title here")
+![image018]((https://raw.githubusercontent.com/Jasonbroker/jasonbroker.github.io/master/supportingfiles/2013-06-11%20AFNetworking%20&%20ASIHttpRequest%20sup/image018.gif)
 
-            6. ASI和AFN以及底层框架的关系
+6. ASI和AFN以及底层框架的关系
 
 我们知道所有网络通信的基础是Socket，一个Socket与另一个连接并传送数据。BSD Socket是一类最常见的Socket抽象接口。
 
