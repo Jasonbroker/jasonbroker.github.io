@@ -233,10 +233,12 @@ a {
   margin: 3px;
 }
 #container .left-col {
-  background: #533982;
+/*background: #533982;*/
+  background-color: #533982;
+  color: #fff;
   width: 300px;
   position: fixed;
-  opacity: 0;
+  opacity: 1;
   -webkit-transition: all 0.2s ease-in;
   -moz-transition: all 0.2s ease-in;
   -ms-transition: all 0.2s ease-in;
@@ -482,7 +484,7 @@ a {
   width: 100%;
 }
 #header a {
-  color: #696969;
+  color: #fff;
 }
 #header a:hover {
   color: #b0a0aa;
@@ -521,7 +523,7 @@ a {
 }
 #header .header-subtitle {
   text-align: center;
-  color: #999;
+  color: #efefef;
   font-size: 14px;
   line-height: 25px;
   overflow: hidden;
@@ -582,22 +584,118 @@ a {
 #header .header-nav .social {
   margin-right: 15px;
   margin-top: 10px;
-  text-align: center;
+/*a.weibo {*/
+/*background:url('/img/weibo.png') center no-repeat #aaaaff;*/
+/*border:1px solid #aaaaff;*/
+/*border: 2px solid #fff;*/
+/*&:hover {*/
+/*border:2px solid #fff;*/
+/*}*/
+/*}*/
+/*a.rss {*/
+/*background:url('/img/rss.png') center no-repeat #ef7522;*/
+/*border:1px solid #ef7522;*/
+/*&:hover {*/
+/*border:1px solid #cf5d0f;*/
+/*}*/
+/*}*/
+/*a.github {*/
+/*background:url('/img/github.png') center no-repeat #afb6ca;*/
+/*border:1px solid #afb6ca;*/
+/*&:hover {*/
+/*border:1px solid #909ab6;*/
+/*}*/
+/*}*/
+/*a.facebook {*/
+/*background:url('/img/facebook.png') center no-repeat #3b5998;*/
+/*border:1px solid #3b5998;*/
+/*&:hover {*/
+/*border:1px solid #2d4373;*/
+/*}*/
+/*}*/
+/*a.google {*/
+/*background:url('/img/google.png') center no-repeat #c83d20;*/
+/*border:1px solid #c83d20;*/
+/*&:hover {*/
+/*border:1px solid #9c3019;*/
+/*}*/
+/*}*/
+/*a.twitter {*/
+/*background:url('/img/twitter.png') center no-repeat #55cff8;*/
+/*border:1px solid #55cff8;*/
+/*&:hover {*/
+/*border:1px solid #24c1f6;*/
+/*}*/
+/*}*/
+/*a.linkedin {*/
+/*background:url('/img/linkedin.png') center no-repeat #005a87;*/
+/*border:1px solid #005a87;*/
+/*&:hover {*/
+/*border:1px solid #006b98;*/
+/*}*/
+/*}*/
+/*a.zhihu {*/
+/*background:url('/img/zhihu.png') center no-repeat #0078d8;*/
+/*border:1px solid #0078d8;*/
+/*&:hover {*/
+/*border:1px solid #0078d8;*/
+/*}*/
+/*}*/
+/*a.douban {*/
+/*background:url('/img/douban.png') center no-repeat #06c611;*/
+/*border:1px solid #06c611;*/
+/*&:hover {*/
+/*border:1px solid #06c611;*/
+/*}*/
+/*}*/
+/*a.mail {*/
+/*background:url('/img/mail.png') center no-repeat #005a87;*/
+/*border:1px solid #005a87;*/
+/*&:hover {*/
+/*border:1px solid #006b98;*/
+/*}*/
+/*}*/
 }
-#header .header-nav .social a {
-  -webkit-border-radius: 50%;
-  border-radius: 50%;
-  display: -moz-inline-stack;
+#header .header-nav .social .social-item {
+  text-align: center;
+  width: 72px;
+  height: 36px;
+  line-height: 36px;
   display: inline-block;
+  display: -moz-inline-stack;
   vertical-align: middle;
   *vertical-align: auto;
-  zoom: 1;
-  *display: inline;
-  text-indent: -9999px;
   margin: 0 8px 15px 8px;
-  opacity: 0.7;
-  width: 28px;
-  height: 28px;
+  opacity: 0.8;
+  border: 2px solid;
+  border-color: #fff;
+  -webkit-border-radius: 21px;
+  border-radius: 21px;
+  -webkit-transition: 0.3s;
+  -moz-transition: 0.3s;
+  -ms-transition: 0.3s;
+  transition: 0.3s;
+}
+#header .header-nav .social .social-item:hover {
+  opacity: 1;
+}
+#header .header-nav .social a {
+/*border-radius:50%;*/
+/*display:-moz-inline-stack;*/
+/*display:inline-block;*/
+/*vertical-align:middle;*/
+/**vertical-align:auto;*/
+  zoom: 1;
+  display: inline-block;
+/*text-indent:-9999px;*/
+/*margin:0 8px 15px 8px;*/
+  opacity: 0.8;
+  width: inherit;
+  height: inherit;
+/*width: 72x;*/
+/*height: 42px;*/
+/*line-height: 42px;*/
+/*margin: auto 10px;*/
   -webkit-transition: 0.3s;
   -moz-transition: 0.3s;
   -ms-transition: 0.3s;
@@ -608,76 +706,6 @@ a {
 }
 #header .header-nav .social a:last-of-type {
   margin-right: 0;
-}
-#header .header-nav .social a.weibo {
-  background: url("/img/weibo.png") center no-repeat #aaf;
-  border: 1px solid #aaf;
-}
-#header .header-nav .social a.weibo:hover {
-  border: 1px solid #aaf;
-}
-#header .header-nav .social a.rss {
-  background: url("/img/rss.png") center no-repeat #ef7522;
-  border: 1px solid #ef7522;
-}
-#header .header-nav .social a.rss:hover {
-  border: 1px solid #cf5d0f;
-}
-#header .header-nav .social a.github {
-  background: url("/img/github.png") center no-repeat #afb6ca;
-  border: 1px solid #afb6ca;
-}
-#header .header-nav .social a.github:hover {
-  border: 1px solid #909ab6;
-}
-#header .header-nav .social a.facebook {
-  background: url("/img/facebook.png") center no-repeat #3b5998;
-  border: 1px solid #3b5998;
-}
-#header .header-nav .social a.facebook:hover {
-  border: 1px solid #2d4373;
-}
-#header .header-nav .social a.google {
-  background: url("/img/google.png") center no-repeat #c83d20;
-  border: 1px solid #c83d20;
-}
-#header .header-nav .social a.google:hover {
-  border: 1px solid #9c3019;
-}
-#header .header-nav .social a.twitter {
-  background: url("/img/twitter.png") center no-repeat #55cff8;
-  border: 1px solid #55cff8;
-}
-#header .header-nav .social a.twitter:hover {
-  border: 1px solid #24c1f6;
-}
-#header .header-nav .social a.linkedin {
-  background: url("/img/linkedin.png") center no-repeat #005a87;
-  border: 1px solid #005a87;
-}
-#header .header-nav .social a.linkedin:hover {
-  border: 1px solid #006b98;
-}
-#header .header-nav .social a.zhihu {
-  background: url("/img/zhihu.png") center no-repeat #0078d8;
-  border: 1px solid #0078d8;
-}
-#header .header-nav .social a.zhihu:hover {
-  border: 1px solid #0078d8;
-}
-#header .header-nav .social a.douban {
-  background: url("/img/douban.png") center no-repeat #06c611;
-  border: 1px solid #06c611;
-}
-#header .header-nav .social a.douban:hover {
-  border: 1px solid #06c611;
-}
-#header .header-nav .social a.mail {
-  background: url("/img/mail.png") center no-repeat #005a87;
-  border: 1px solid #005a87;
-}
-#header .header-nav .social a.mail:hover {
-  border: 1px solid #006b98;
 }
 #header .switch-part {
   width: 100%;
